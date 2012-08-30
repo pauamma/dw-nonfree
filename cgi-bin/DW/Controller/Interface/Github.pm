@@ -15,6 +15,8 @@
 # Dreamwidth Studios open-source code, but you cannot use it on your site
 # or redistribute it, with or without modifications.
 
+package DW::Controller::Interface::Github;
+
 use strict;
 use warnings;
 
