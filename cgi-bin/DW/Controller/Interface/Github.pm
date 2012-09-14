@@ -27,6 +27,8 @@ use XMLRPC::Lite;
 DW::Routing->register_string( "/interface/github", \&hooks_handler,
                                 app => 1, methods => { POST => 1 } );
 
+my $zilla_agent = "$LJ::SITENAME GitHub WebHook ($LJ::ADMIN_EMAIL)";
+
 # Got a pull request, comment on zilla bug(s).
 sub zillacomment_pullrequest {
     my $payload = $_[0];
@@ -62,7 +64,7 @@ sub zillacomment_pullrequest {
     my $xmlrpc = XMLRPC::Lite->new;
     $xmlrpc->proxy(
             "http://$server/xmlrpc.cgi",
-            agent => "$LJ::SITENAME Changelog Hook ($LJ::ADMIN_EMAIL)"
+            agent => $zilla_agent
     );
 
     foreach my $id ( @bug_ids ) {
