@@ -23,6 +23,7 @@ use warnings;
 use DW::Routing;
 use JSON ();
 use XMLRPC::Lite;
+use Digest::SHA1 ();
 
 DW::Routing->register_string( "/interface/github", \&hooks_handler,
                                 app => 1, methods => { POST => 1 } );
@@ -92,9 +93,23 @@ my %table = (
 
 sub hooks_handler {
     my $r = DW::Request->get;
+    my $body = $r->content;
+
+    # Check received SHA1 digest if shared secret configured
+    my $salt = $LJ::GITHUB{bugzilla}->{SHA1_salt};
+    if ( defined $salt ) {
+        my $received_SHA1 = $r->header_in( 'X-Hub-Signature' );
+        if ( defined $received_SHA1 and $received_SHA1 =~ s/^sha1=//i ) {
+            return $r->FORBIDDEN
+                if lc( $received_SHA1 )
+                   ne lc( DIGEST::SHA1::sha1_hex( $salt, $body ) );
+        } else {
+            die "Missing or malformed signature header: ", $received_SHA1 // '';
+        }
+    }
 
     # parse out the payload
-    my $payload = JSON::jsonToObj( $r->post_args->{payload} );
+    my $payload = JSON::jsonToObj( $body );
 
     my $hook_type = exists $payload->{pull_request} ? "pull_request" :
                     exists $payload->{commits}      ? "push"         :
